@@ -10,6 +10,14 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - app_network
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 9G
+        reservations:
+          cpus: '4'
+          memory: 9G
 
   postgres:
     image: postgres:latest
@@ -24,6 +32,14 @@ services:
       - ./volumes/postgres_init:/docker-entrypoint-initdb.d
     networks:
       - app_network
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '4'
+          memory: 4G
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin"]  # Changed to match POSTGRES_USER
       interval: 10s
@@ -41,6 +57,14 @@ services:
       - ./volumes/qdrant_snapshots:/qdrant/snapshots
     networks:
       - app_network
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '4'
+          memory: 8G
     depends_on:
       postgres:
         condition: service_healthy
