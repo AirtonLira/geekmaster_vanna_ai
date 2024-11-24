@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  ollama:
+    container_name: ollama_server
+    build: .
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - app_network
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin     
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./volumes/postgres_init:/docker-entrypoint-initdb.d
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]  # Changed to match POSTGRES_USER
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant_vector
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./volumes/qdrant_data:/qdrant/storage
+      - ./volumes/qdrant_snapshots:/qdrant/snapshots
+    networks:
+      - app_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - app_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  pgadmin_data:
+  ollama_data:
